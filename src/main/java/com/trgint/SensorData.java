@@ -10,6 +10,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 /**
  * @author Vasilis Kleanthous
@@ -23,10 +24,12 @@ public class SensorData {
     @Id
     @SequenceGenerator(name = "sensorDataSequence", sequenceName = "sensor_data_id_seq",  allocationSize = 1,  initialValue = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sensorDataSequence")
+    @NotNull
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY) 
     @JoinColumn(name = "sensorid", nullable = false)
+    @NotNull
     private Sensor sensor;
     
     @Column(precision=10, scale=2)

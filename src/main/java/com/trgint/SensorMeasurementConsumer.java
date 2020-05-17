@@ -48,7 +48,7 @@ public class SensorMeasurementConsumer {
 			JsonReader jsonReader = Json.createReader(new StringReader(input));
 		    JsonObject measurement = jsonReader.readObject();
 			
-		    //Async processing of the measurement.
+		    //Async processing of the measurement. Thread context is used to propagate context to the new thread created.
 			threadContext.withContextCapture(CompletableFuture.runAsync(() ->
 			{
 				try
@@ -67,7 +67,7 @@ public class SensorMeasurementConsumer {
 		catch(Exception e)
 		{
 			e.printStackTrace();
-			logger.error("Error Incoming topic: anonymize-contact with error message:"+ ExceptionUtil.generateStackTrace(e));
+			logger.error("Error Consuming Sensor Measurement. Error message:"+ ExceptionUtil.generateStackTrace(e));
 		}
 	}
 }

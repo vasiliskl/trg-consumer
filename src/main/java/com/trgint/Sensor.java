@@ -7,6 +7,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 /**
  * @author Vasilis Kleanthous
@@ -20,9 +21,11 @@ public class Sensor {
     @Id
     @SequenceGenerator(name = "sensorSequence", sequenceName = "sensor_id_seq",  allocationSize = 1,  initialValue = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sensorSequence")
+    @NotNull
     private Long id;
 
     @Column(length = 40, unique = true)
+    @NotNull
     private String name;
 
     public Long getId() {

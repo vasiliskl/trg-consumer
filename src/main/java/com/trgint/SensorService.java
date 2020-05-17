@@ -1,41 +1,97 @@
 package com.trgint;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.json.JsonObject;
 import javax.persistence.EntityManager;
-import javax.validation.Validator;
+import javax.transaction.Transactional;
 
+import org.jboss.logging.Logger;
+/**
+ * @author Vasilis Kleanthous
+ * This service class implements the method used to process the data received from queue.
+ * It does some basic validations and business logic and persists the data to the database using Hibernate ORM.
+ *
+ */
+@ActivateRequestContext
 @ApplicationScoped
 public class SensorService {
-
-	@Inject
-    private Validator validator;
 	
     @Inject
     private EntityManager entityManager;
+    private static final Logger logger = Logger.getLogger(SensorService.class.getName());
     
-	public void processSensorMeasurement(JsonObject measurement)throws Exception
+    @Transactional
+	public void processSensorMeasurement(JsonObject measurement)throws SensorMeasurementProcessingException
 	{
-		Long sensorId=new Long(measurement.getInt("sensorId"));
-		
-		if(sensorId!=null)
-		{
-			Sensor sensor=entityManager.find(Sensor.class, sensorId);
-			
-			if(sensor!=null)
+    	try 
+    	{
+			if(measurement.get("sensorId")!=null)
 			{
-				SensorData data=new SensorData();
+				Long sensorId=new Long(measurement.getInt("sensorId"));
+				logger.info("Processing measurement from sensor "+sensorId);
 				
-				data.setSensor(sensor);
-				data.setLatitude(new Double(measurement.getString("latitude")));
-				data.setLongitude(new Double(measurement.getString("longitude")));
-				data.setHumidity(new Double(measurement.getString("humidity")));
-				data.setPressure(new Double(measurement.getString("pressure")));
-				data.setTemperature(new Double(measurement.getString("temperature")));
+				Sensor sensor=entityManager.find(Sensor.class, sensorId);
 				
-				entityManager.persist(data);
+				if(sensor!=null)
+				{
+					SensorData data=new SensorData();
+					
+					data.setSensor(sensor);
+					data.setLatitude(new Double(measurement.getJsonNumber("latitude").doubleValue()));
+					data.setLongitude(new Double(measurement.getJsonNumber("longitude").doubleValue()));
+					data.setHumidity(new Double(measurement.getJsonNumber("humidity").doubleValue()));
+					data.setPressure(new Double(measurement.getJsonNumber("pressure").doubleValue()));
+					data.setTemperature(new Double(measurement.getJsonNumber("temperature").doubleValue()));
+					
+					entityManager.persist(data);
+					
+					logger.info("Measurement from sensor "+sensorId+" saved.");
+					
+					if(data.getHumidity()>50)
+					{
+						logger.warn("Humidity from sensor "+sensorId+" is too high!!!");
+					}
+					else
+					{
+						logger.info("Humidity from sensor "+sensorId+" looks ok.");
+					}
+					
+					if(data.getPressure()<2)
+					{
+						logger.warn("Pressure from sensor "+sensorId+" is too low!!!");
+					}
+					else
+					{
+						logger.info("Pressure from sensor "+sensorId+" looks ok.");
+					}
+					
+					if(data.getTemperature()<0)
+					{
+						logger.warn("Temperature from sensor "+sensorId+" is too low!!!");
+					}
+					else if(data.getTemperature()>40)
+					{
+						logger.warn("Temperature from sensor "+sensorId+" is too high!!!");
+					}
+					else
+					{
+						logger.info("Temperature from sensor "+sensorId+" looks ok.");
+					}
+					
+				}
+				else
+				{
+					logger.error("Invalid sensor.");
+					throw new SensorMeasurementProcessingException();
+				}
 			}
-		}
+    	}
+    	catch(Exception e)
+    	{
+    		e.printStackTrace();
+    		throw new SensorMeasurementProcessingException();
+    	}
 	}
 }

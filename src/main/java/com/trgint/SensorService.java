@@ -7,6 +7,7 @@ import javax.json.JsonObject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -24,6 +25,18 @@ public class SensorService {
     @Inject
     private EntityManager entityManager;
     private static final Logger logger = Logger.getLogger(SensorService.class.getName());
+    @ConfigProperty(name = "humidity.max")
+    Double maxHumidity;
+    @ConfigProperty(name = "humidity.min")
+    Double minHumidity;
+    @ConfigProperty(name = "temperature.max")
+    Double maxTemp;
+    @ConfigProperty(name = "temperature.min")
+    Double minTemp;
+    @ConfigProperty(name = "pressure.max")
+    Double maxPressure;
+    @ConfigProperty(name = "pressure.min")
+    Double minPressure;
     
     /**
      * This method implements the business logic of processing the measurements consumed from the queue.
@@ -60,36 +73,7 @@ public class SensorService {
 					
 					logger.info("Measurement from sensor "+sensorId+" saved.");
 					
-					if(data.getHumidity()>50)
-					{
-						logger.warn("Humidity from sensor "+sensorId+" is too high!!!");
-					}
-					else
-					{
-						logger.info("Humidity from sensor "+sensorId+" looks ok.");
-					}
-					
-					if(data.getPressure()<2)
-					{
-						logger.warn("Pressure from sensor "+sensorId+" is too low!!!");
-					}
-					else
-					{
-						logger.info("Pressure from sensor "+sensorId+" looks ok.");
-					}
-					
-					if(data.getTemperature()<0)
-					{
-						logger.warn("Temperature from sensor "+sensorId+" is too low!!!");
-					}
-					else if(data.getTemperature()>40)
-					{
-						logger.warn("Temperature from sensor "+sensorId+" is too high!!!");
-					}
-					else
-					{
-						logger.info("Temperature from sensor "+sensorId+" looks ok.");
-					}
+					checkMeasurements(data);
 					
 				}
 				else
@@ -105,4 +89,46 @@ public class SensorService {
     		throw new SensorMeasurementProcessingException();
     	}
 	}
+    
+    private void checkMeasurements(SensorData data)
+    {
+		if(data.getHumidity()>maxHumidity)
+		{
+			logger.warn("Humidity from sensor "+data.getSensor().getId()+" is too high!!!");
+		}
+		else if(data.getHumidity()<minHumidity)
+		{
+			logger.warn("Humidity from sensor "+data.getSensor().getId()+" is too low!!!");
+		}
+		else
+		{
+			logger.info("Humidity from sensor "+data.getSensor().getId()+" looks ok.");
+		}
+		
+		if(data.getPressure()>maxPressure)
+		{
+			logger.warn("Pressure from sensor "+data.getSensor().getId()+" is too high!!!");
+		}
+		else if(data.getPressure()<minPressure)
+		{
+			logger.warn("Pressure from sensor "+data.getSensor().getId()+" is too low!!!");
+		}
+		else
+		{
+			logger.info("Pressure from sensor "+data.getSensor().getId()+" looks ok.");
+		}
+		
+		if(data.getTemperature()<minTemp)
+		{
+			logger.warn("Temperature from sensor "+data.getSensor().getId()+" is too low!!!");
+		}
+		else if(data.getTemperature()>maxTemp)
+		{
+			logger.warn("Temperature from sensor "+data.getSensor().getId()+" is too high!!!");
+		}
+		else
+		{
+			logger.info("Temperature from sensor "+data.getSensor().getId()+" looks ok.");
+		}
+    }
 }

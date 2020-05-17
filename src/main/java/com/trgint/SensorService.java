@@ -7,6 +7,9 @@ import javax.json.JsonObject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.jboss.logging.Logger;
 /**
  * @author Vasilis Kleanthous
@@ -22,7 +25,15 @@ public class SensorService {
     private EntityManager entityManager;
     private static final Logger logger = Logger.getLogger(SensorService.class.getName());
     
+    /**
+     * This method implements the business logic of processing the measurements consumed from the queue.
+     * It validates and persists the data received and does also some checks on the measurements and prints the corresponding warnings in the logs.
+     * @param measurement - The measurement JSON
+     * @throws SensorMeasurementProcessingException
+     */
     @Transactional
+    @Counted(name = "measurementsProcessed", description = "How many measurements have been processed.")
+    @Timed(name = "measurementProcessedTimer", description = "A measure of how long it takes to process a measurement.", unit = MetricUnits.MILLISECONDS)
 	public void processSensorMeasurement(JsonObject measurement)throws SensorMeasurementProcessingException
 	{
     	try 
